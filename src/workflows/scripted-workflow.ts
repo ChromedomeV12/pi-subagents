@@ -897,6 +897,7 @@ export function validateWorkflowScript(script: string, options: WorkflowScriptVa
 			const keyNode = astNode(args[0]) ? args[0] : undefined;
 			const key = literalString(keyNode);
 			if (keyNode && key !== undefined && !KEY_PATTERN.test(key)) errors.push({ message: "runs.run key must be 1-128 characters using letters, numbers, '.', '_' or '-', and start with a letter or number.", ...nodeLocation(keyNode) });
+			if (keyNode?.type === "ObjectExpression") errors.push({ message: `runs.run expects (key, params); got an object as the first argument. Use runs.run("plan", { agent, task }) or runs.all([{ key, agent, task }]).`, ...nodeLocation(keyNode) });
 			if (astNode(args[1])) {
 				errors.push(...validateStaticBaseRef(args[1], "runs.run"));
 				const message = definitelyNonJson(args[1]);

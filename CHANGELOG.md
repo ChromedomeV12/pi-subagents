@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A workflow script that called `runs.run({ key, agent, task })`, passing one object where `runs.run` expects a key and then the params, passed validation and then failed with "runs.run has an invalid key.", which did not say what was wrong. Validation now rejects that call, and both validation and the running script say to use `runs.run("plan", { agent, task })` or `runs.all([{ key, agent, task }])`. Thanks to [@brunovcosta](https://github.com/brunovcosta) for the report. (#3088)
+
 ## [0.83.0] - 2026-10-25
 
 ### Highlights
