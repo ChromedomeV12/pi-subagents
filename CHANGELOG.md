@@ -5,6 +5,7 @@
 ### Fixed
 
 - A blank line inside an indented frontmatter block, such as an `external-cli` runner whose script argument has an empty line, cut the value off at that line and dropped the rest of the agent's settings below it. The whole block is now read. Lists and blocks that used to stop at a blank line, such as `tools:`, now include their later entries, so an agent can get tools it did not get before. `|` and `>` blocks are unchanged. Thanks to [@jbachorik](https://github.com/jbachorik). (#3089)
+- A capability ceiling registered the way the docs show, with `ctx.sessionManager.getSessionId()`, now applies in saved sessions. Before, most checks looked it up by the session file path instead, so background launches, workflow children and `{ action: "list" }` ignored it, and only foreground launches were blocked. Every check now uses the session id; a ceiling registered by session file path no longer applies. Thanks to [@corobis](https://github.com/corobis) for the report. (#3087)
 
 ## [0.83.0] - 2026-10-25
 
