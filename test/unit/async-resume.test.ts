@@ -150,7 +150,8 @@ describe("async resume lookup", () => {
 	});
 
 	it("refuses to revive a worktree child in the source checkout while its runner is finalizing", async () => {
-		const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-async-resume-finalizing-"));
+		// Git reports the long Windows path; a short 8.3 temp path would fail the cwd containment check first.
+		const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "pi-async-resume-finalizing-")));
 		const repo = path.join(root, "repo");
 		const asyncDir = path.join(root, "runs", "run-finalizing");
 		const manifestPath = parallelHandoffPath(asyncDir);
