@@ -5,6 +5,7 @@
 ### Fixed
 
 - A blank line inside an indented frontmatter block, such as an `external-cli` runner whose script argument has an empty line, cut the value off at that line and dropped the rest of the agent's settings below it. The whole block is now read. Lists and blocks that used to stop at a blank line, such as `tools:`, now include their later entries, so an agent can get tools it did not get before. `|` and `>` blocks are unchanged. Thanks to [@jbachorik](https://github.com/jbachorik). (#3089)
+- `subagent({ action: "interrupt" })` without an id no longer interrupts a run of its own choosing. It used to pick the last foreground run or else the newest running background run, so when a model's call lost its `id`, a healthy child could be interrupted in place of the one meant. It now refuses with "action='interrupt' requires id.", like `stop`, `steer`, and `resume`. When an id matches no run, `stop`, `interrupt`, and `resume` now name that id in the error, so a caller can tell an unknown id from one that never arrived. Thanks to [@mannainsect](https://github.com/mannainsect) for the report. (#3081)
 
 ## [0.83.0] - 2026-10-25
 
