@@ -195,7 +195,7 @@ export function resolveRetainedWorktreeCwd(manifestPath: string, runId: string, 
 	const requiredCwd = path.join(cleanup.path, relativeCwd);
 	if (cleanup.worktreeRemoved || cleanup.branchRemoved) throw new Error(`Async run '${runId}' required managed worktree was removed: ${requiredCwd}`);
 	// The runner removes the worktree right after this marker, without the locks that guard resume admission.
-	if (cleanup.reason?.includes("pending durable handoff capture")) throw new Error(`Async run '${runId}' child ${childIndex} is still finalizing its managed worktree: ${requiredCwd}. Retry after the run settles.`);
+	if (cleanup.reason?.includes("pending durable handoff capture")) throw new Error(`Async run '${runId}' child ${childIndex} is still finalizing its managed worktree: ${requiredCwd}. Retry after the run settles; if it already ended, inspect ${manifestPath}.`);
 	let worktreeRoot = "";
 	let resolvedRequiredCwd = "";
 	try {
