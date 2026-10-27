@@ -154,6 +154,7 @@ describe("scripted workflow runtime", () => {
 		const objectRunKey = validateWorkflowScript(`const plan = await runs.run({ key: "plan", agent: "scout", task: "x" });\nreturn plan.output;`);
 		assert.equal(objectRunKey.ok, false);
 		assert.ok(objectRunKey.errors.some((error) => error.message.includes("got an object as the first argument") && error.message.includes(`runs.run("plan", { agent, task })`)));
+		assert.equal(validateWorkflowScript(`const runs = { run: (item) => item.task };\nreturn runs.run({ task: "x" });`).ok, true);
 
 		for (const script of [
 			`return runs.run("single", { agent: "worker", task: undefined });`,
