@@ -5,6 +5,7 @@
 ### Fixed
 
 - A blank line inside an indented frontmatter block, such as an `external-cli` runner whose script argument has an empty line, cut the value off at that line and dropped the rest of the agent's settings below it. The whole block is now read. Lists and blocks that used to stop at a blank line, such as `tools:`, now include their later entries, so an agent can get tools it did not get before. `|` and `>` blocks are unchanged. Thanks to [@jbachorik](https://github.com/jbachorik). (#3089)
+- Resuming a background child that ran in its own worktree (`worktree: true`) no longer continues it in your main checkout. If you interrupted the child, or it timed out, and resumed it within the few seconds its runner needed to save the child's changes and clean up its worktree, the revived child could start in the original checkout and commit or switch branches there, or start in a worktree that was deleted under it. That resume is now refused with a message to retry once the run settles. Thanks to [@peskycipher](https://github.com/peskycipher) for the report and [@isjiajia01](https://github.com/isjiajia01) for narrowing it down. (#3083)
 
 ## [0.83.0] - 2026-10-25
 
