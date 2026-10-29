@@ -126,6 +126,8 @@ export interface ChildSession {
 	readonly modelId: string | undefined;
 	/** Provider id of the selected model when this child inherited that provider from the parent's registry instead of loading its extension. */
 	readonly inheritedProvider?: string;
+	/** Provider id of the selected model when an extension loaded in this child registered that provider. */
+	readonly claimedProvider?: string;
 	/** Live provider/id of the selected model when Pi marks it virtual (`api === "pi-virtual"`); assistant messages then name the dispatched physical model. */
 	readonly virtualModelId?: string;
 	readonly contextWindow?: number;
@@ -575,6 +577,7 @@ export function createDefaultChildSessionFactory(options: DefaultChildSessionFac
 				}
 			};
 			let inheritedProviders = new Set<string>();
+			let claimedProviders = new Set<string>();
 			const openSession = async () => {
 				if (!resetExtensionCacheOnReload(loader) && (launch.ambientExtensions || launch.extensionPaths.length)) launch.onExtensionError?.({ extensionPath: "<loader>", event: "load", error: new Error("pi's extension cache reset is unavailable; extensions loaded into this child share module state with other sessions in this process.") });
 				await loader.reload();
@@ -583,6 +586,7 @@ export function createDefaultChildSessionFactory(options: DefaultChildSessionFac
 					? loader.getExtensions().errors.filter(({ path }) => isRequiredSource(path)) : [];
 				if (loadErrors.length > 0) throw new Error(`Required child extension failed to load: ${loadErrors.map(({ path, error }) => `${path}: ${error}`).join("; ")}`);
 				const queued = flushQueuedProviderRegistrations(loader, modelRuntime, launch.onExtensionError, isRequiredSource);
+				claimedProviders = queued.claimedProviderIds;
 				if (requiredPaths.size > 0) {
 					const loadedIdentities = new Set(loader.getExtensions().extensions.map(({ resolvedPath }) => requiredExtensionIdentity(resolvedPath)));
 					const missing = [...requiredPaths].filter((extensionPath) => !loadedIdentities.has(requiredExtensionIdentity(extensionPath)));
@@ -708,6 +712,7 @@ export function createDefaultChildSessionFactory(options: DefaultChildSessionFac
 				get sessionId() { return session.sessionId; },
 				get modelId() { return session.model ? `${session.model.provider}/${session.model.id}` : undefined; },
 				get inheritedProvider() { return session.model && inheritedProviders.has(session.model.provider) ? session.model.provider : undefined; },
+				get claimedProvider() { return session.model && claimedProviders.has(session.model.provider) ? session.model.provider : undefined; },
 				get virtualModelId() { return session.model?.api === "pi-virtual" ? `${session.model.provider}/${session.model.id}` : undefined; },
 				get contextWindow() { return session.model?.contextWindow; },
 			};

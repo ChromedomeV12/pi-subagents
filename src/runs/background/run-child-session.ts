@@ -627,6 +627,7 @@ export function runChildSession(input: RunChildSessionInput): Promise<RunChildSe
 				&& !input.launch.session.ambientExtensions) {
 				finalError = `${promptErrorMessage}\n\n${formatChildModelResolutionDiagnostic({ agent: input.launch.config.agent, model: input.launch.session.model, host: "runner", capabilityCeiling: input.launch.toolPlan.capabilityCeiling })}`;
 			} else if (input.parentExtensionProvider
+				&& session?.claimedProvider !== input.parentExtensionProvider
 				&& finalError !== undefined
 				&& (finalError === promptErrorMessage || finalError === assistantError)
 				&& toolCount === 0

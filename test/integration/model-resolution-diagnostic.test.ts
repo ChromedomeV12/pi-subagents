@@ -216,5 +216,8 @@ describe("child model resolution diagnostic", () => {
 		const toolTurn = { role: "assistant", content: [{ type: "toolCall", id: "t1", name: "read", arguments: {} }], stopReason: "toolUse", usage: errorReply.usage };
 		const afterSuccess = await runStep(bridgePi([toolTurn, errorReply]));
 		assert.equal(afterSuccess.error, PROVIDER_ERROR);
+
+		const childLoadedProvider = await runStep(bridgePi([errorReply], true));
+		assert.equal(childLoadedProvider.error, PROVIDER_ERROR, "a child whose own extension registered the provider keeps the plain error");
 	});
 });
