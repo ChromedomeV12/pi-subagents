@@ -41,25 +41,28 @@ const bridgeParent: ParentProviderRegistry = {
 };
 const errorReply = { role: "assistant", content: [], stopReason: "error", errorMessage: PROVIDER_ERROR, usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: { total: 0 } } };
 
-/** A pi module stub whose `bridge/model` session replays `replies` as the first prompt's assistant messages; an Error reply rejects the prompt. */
-function bridgePi(replies: unknown[], childClaimsBridge = false): PiCodingAgentModule {
-	const runtime = { childClaimsBridge };
+/** A pi module stub whose `bridge/model` session replays `replies` as the first prompt's assistant messages; an Error reply rejects the prompt. `childClaimsBridge` makes a child extension register `bridge` while loading or on `session_start`. */
+function bridgePi(replies: unknown[], childClaimsBridge?: "load" | "session_start"): PiCodingAgentModule {
 	return {
-		ModelRuntime: { create: async () => ({ registerProvider() {}, registerNativeProvider() {}, refresh: async () => {} }) },
+		ModelRuntime: { create: async () => {
+			const registered = new Set<string>();
+			return { registerProvider(name: string) { registered.add(name); }, registerNativeProvider(provider: { id: string }) { registered.add(provider.id); }, getRegisteredProviderIds: () => [...registered], refresh: async () => {} };
+		} },
 		SettingsManager: { create: () => ({}) },
 		DefaultResourceLoader: class {
 			async reload() {}
-			getExtensions() { return { extensions: [], errors: [], runtime: { pendingProviderRegistrations: runtime.childClaimsBridge ? [{ name: "bridge", config: {}, extensionPath: "/bridge.ts" }] : [] } }; }
+			getExtensions() { return { extensions: [], errors: [], runtime: { pendingProviderRegistrations: childClaimsBridge === "load" ? [{ name: "bridge", config: {}, extensionPath: "/bridge.ts" }] : [] } }; }
 		},
 		SessionManager: { inMemory: () => ({}), create: () => ({}) },
 		resolveCliModel: () => ({ model: { provider: "bridge", id: "model" } }),
-		createAgentSession: async () => {
+		createAgentSession: async ({ modelRuntime }: { modelRuntime: { registerProvider(name: string, config: unknown): void } }) => {
 			const listeners: Array<(event: unknown) => void> = [];
 			const messages: unknown[] = [];
 			const emit = (message: unknown) => { messages.push(message); for (const listener of listeners) listener({ type: "message_end", message }); };
 			return { session: {
 				model: { provider: "bridge", id: "model" }, messages, sessionId: "s", extensionRunner: { hasHandlers: () => false },
-				bindExtensions: async () => {}, dispose() {}, abort: async () => {}, steer: async () => {}, followUp: async () => {},
+				bindExtensions: async () => { if (childClaimsBridge === "session_start") modelRuntime.registerProvider("bridge", {}); },
+				dispose() {}, abort: async () => {}, steer: async () => {}, followUp: async () => {},
 				subscribe: (listener: (event: unknown) => void) => { listeners.push(listener); return () => {}; },
 				prompt: async (text: string) => { emit({ role: "user", content: [{ type: "text", text }] }); for (const reply of replies) { if (reply instanceof Error) throw reply; emit(reply); } },
 			} };
@@ -144,7 +147,7 @@ describe("child model resolution diagnostic", () => {
 
 	it("keeps the plain provider error when the child loaded the provider's extension itself or already had a successful response", async () => {
 		const toolTurn = { role: "assistant", content: [{ type: "toolCall", id: "t1", name: "read", arguments: {} }], stopReason: "toolUse", usage: errorReply.usage };
-		for (const [runId, pi] of [["foreground-claimed-provider", bridgePi([errorReply], true)], ["foreground-after-success", bridgePi([toolTurn, errorReply])]] as const) {
+		for (const [runId, pi] of [["foreground-claimed-provider", bridgePi([errorReply], "load")], ["foreground-after-success", bridgePi([toolTurn, errorReply])]] as const) {
 			const factory = createDefaultChildSessionFactory({ loadPiCodingAgent: async () => pi });
 			const result = await runSync(tempDir, [makeAgent("bridge-worker", { model: "bridge/model" })], "bridge-worker", "Task", {
 				runId,
@@ -217,7 +220,9 @@ describe("child model resolution diagnostic", () => {
 		const afterSuccess = await runStep(bridgePi([toolTurn, errorReply]));
 		assert.equal(afterSuccess.error, PROVIDER_ERROR);
 
-		const childLoadedProvider = await runStep(bridgePi([errorReply], true));
-		assert.equal(childLoadedProvider.error, PROVIDER_ERROR, "a child whose own extension registered the provider keeps the plain error");
+		for (const claim of ["load", "session_start"] as const) {
+			const childLoadedProvider = await runStep(bridgePi([errorReply], claim));
+			assert.equal(childLoadedProvider.error, PROVIDER_ERROR, `a child whose own extension registered the provider (${claim}) keeps the plain error`);
+		}
 	});
 });
