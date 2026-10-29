@@ -13,6 +13,7 @@ import { createDefaultChildSessionFactory, type ParentProviderRegistry, type PiC
 import { runSync } from "../../src/runs/foreground/execution.ts";
 import { buildRunnerChildLaunch } from "../../src/runs/background/runner-child-launch.ts";
 import { runChildSession } from "../../src/runs/background/run-child-session.ts";
+import { buildAsyncRunnerSteps } from "../../src/runs/background/async-execution.ts";
 import { createTempDir, makeAgent, removeTempDir } from "../support/helpers.ts";
 
 const MODEL = "pengepul/commandcode/deepseek/deepseek-v4.1-flash";
@@ -186,5 +187,34 @@ describe("child model resolution diagnostic", () => {
 		assert.match(run.error ?? "", /Capability ceiling from policy-fixture denies extensions/);
 		assert.match(run.error ?? "", /does not enable ambient loading/);
 		assert.match(run.error ?? "", /Relax the capability ceiling to allow extensions/);
+	});
+
+	it("explains a background child that failed without the parent extension registering its provider", async () => {
+		const agents = [makeAgent("locked-down", { model: "bridge/model", extensions: [] }), makeAgent("ambient", { model: "bridge/model" })];
+		const built = buildAsyncRunnerSteps("runner-parent-provider", {
+			chain: [{ agent: "locked-down", task: "Task" }, { agent: "ambient", task: "Task" }],
+			agents,
+			ctx: { pi: {} as never, cwd: tempDir, currentSessionId: "parent", parentProviderRegistry: bridgeParent },
+			availableModels: [{ provider: "bridge", id: "model", fullId: "bridge/model" }],
+			asyncDir: tempDir,
+			maxSubagentDepth: 1,
+		});
+		assert.ok("steps" in built, JSON.stringify(built));
+		const [lockedDown, ambient] = built.steps as Array<Parameters<typeof buildRunnerChildLaunch>[0]>;
+		assert.equal(ambient?.parentExtensionProvider, undefined, "a child that loads the ambient extensions loads the provider's extension too");
+
+		const runStep = async (pi: PiCodingAgentModule) => {
+			const launch = buildRunnerChildLaunch(lockedDown!, { cwd: tempDir, id: "runner-parent-provider", flatIndex: 0 }, { model: "bridge/model", sessionEnabled: false, watchdogStatus: () => {} });
+			const factory = createDefaultChildSessionFactory({ loadPiCodingAgent: async () => pi });
+			return runChildSession({ factory, launch, prompt: "Task: Task", appendChildEvent: () => {}, writeOutputLine: () => {}, parentExtensionProvider: lockedDown!.parentExtensionProvider });
+		};
+		const failed = await runStep(bridgePi([errorReply]));
+		assert.ok(failed.error?.startsWith(`${PROVIDER_ERROR}\n\n`), `provider error must stay first, got: ${failed.error}`);
+		assert.match(failed.error ?? "", /Agent 'locked-down' ran as a background child without the ambient extensions\. In the parent, provider 'bridge' for 'bridge\/model' is registered by an extension that did not load in this child/);
+		assert.match(failed.error ?? "", /list it in `subagentOnlyExtensions` or `extensions` in the agent frontmatter/);
+
+		const toolTurn = { role: "assistant", content: [{ type: "toolCall", id: "t1", name: "read", arguments: {} }], stopReason: "toolUse", usage: errorReply.usage };
+		const afterSuccess = await runStep(bridgePi([toolTurn, errorReply]));
+		assert.equal(afterSuccess.error, PROVIDER_ERROR);
 	});
 });
