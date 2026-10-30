@@ -1,13 +1,15 @@
 {
   "name": "pi-subagents",
-  "version": "0.84.0",
+  "version": "0.84.0-personal.1",
   "private": true,
   "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
   "author": "Nico Bailon",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./index.ts",
+    ".": "./src/personal/index.ts",
+    "./personal-fleet": "./src/personal/fleet.ts",
+    "./personal-roles": "./src/personal/definitions.ts",
     "./background-work": "./src/api/background-work.ts",
     "./external-job-provider": "./src/api/external-job-provider.ts",
     "./external-runs": "./src/api/external-runs.ts",
@@ -26,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+    "url": "git+https://github.com/ChromedomeV12/pi-subagents.git"
   },
   "homepage": "https://github.com/nicobailon/pi-subagents#readme",
   "bugs": {
@@ -69,7 +71,7 @@
   },
   "pi": {
     "extensions": [
-      "./index.ts"
+      "./src/personal/index.ts"
     ],
     "skills": [
       "./skills"

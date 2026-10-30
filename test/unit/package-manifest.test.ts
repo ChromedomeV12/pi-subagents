@@ -108,7 +108,7 @@ test("published extension APIs use supported package entrypoints", async () => {
 	const packageJson = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf-8"));
 
 	assert.equal(packageJson.private, true, "the source checkout must not be publishable");
-	assert.deepEqual(packageJson.pi?.extensions, ["./index.ts"]);
+	assert.deepEqual(packageJson.pi?.extensions, ["./src/personal/index.ts"]);
 	assert.equal(packageJson.files?.includes("index.ts"), true);
 	assert.equal(packageJson.files?.includes("*.mjs"), true);
 	assert.equal(fs.existsSync(path.join(projectRoot, "async-retention-discovery-worker.mjs")), true);
@@ -120,7 +120,9 @@ test("published extension APIs use supported package entrypoints", async () => {
 	assert.match(entrySource, /await import\("\.\/src\/extension\/index\.ts"\)/);
 	assert.equal(fs.existsSync(path.join(projectRoot, "src", "api", "delegation.ts")), true);
 	assert.deepEqual(packageJson.exports, {
-		".": "./index.ts",
+		".": "./src/personal/index.ts",
+		"./personal-fleet": "./src/personal/fleet.ts",
+		"./personal-roles": "./src/personal/definitions.ts",
 		"./agents": "./src/api/agents.ts",
 		"./inspectors": "./src/api/inspectors.ts",
 		"./background-work": "./src/api/background-work.ts",

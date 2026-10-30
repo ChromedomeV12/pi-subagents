@@ -199,7 +199,7 @@ describe("profiles helpers", () => {
 		fs.writeFileSync(path.join(agentDir, "worker.md"), `---\nname: worker\ndescription: Profile-managed worker\n---\n\nDo work.\n`);
 
 		applySubagentProfile("azure-fallback");
-		const agents = discoverAgents(process.cwd(), "both").agents;
+		const agents = discoverAgents(homeDir, "both").agents;
 		const worker = agents.find((agent) => agent.name === "worker");
 		assert.equal(worker?.source, "user");
 		assert.equal(worker?.model, "bluebox-azure-openai/gpt-5_6-luna");
