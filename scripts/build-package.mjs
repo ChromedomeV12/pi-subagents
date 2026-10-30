@@ -17,6 +17,7 @@ const expectedRootModules = [
 const staticFiles = [
 	"README.md",
 	"CHANGELOG.md",
+	"DOWNSTREAM.md",
 	"LICENSE",
 ];
 const expectedDirectories = ["agents", "skills", "prompts", "docs"];

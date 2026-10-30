@@ -4,6 +4,13 @@
 
 # pi-subagents
 
+Personal downstream of Nico Bailon's pi-subagents v0.84.0. The execution engine
+is retained; the default entry adds a smaller command surface, fleet costs and
+a four-role configuration overview. See [DOWNSTREAM.md](DOWNSTREAM.md) for the
+change list, installation contract and reviewed upstream-update procedure.
+The original upstream documentation follows; some commands below are hidden
+by this downstream's entry point.
+
 `pi-subagents` lets Pi delegate work to focused child agents. Use it for code review, scouting, implementation, parallel audits, saved workflows, background jobs, and anything else that benefits from a second or third set of model eyes.
 
 <https://github.com/user-attachments/assets/702554ec-faaf-4635-80aa-fb5d6e292fd1>
